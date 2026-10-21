@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nutri-Enfants</title><meta name="theme-color" content="#23754A">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg">
+<style>
+:root{--g:#23754A;--y:#FFC93C;--ink:#12263A;--m:#4A5D70;--bd:#DCE8DF;--bg:#F2F8F3;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);line-height:1.5}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;background:#fff;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5}
+h1{font-size:20px;margin:0}h2{font-size:17px;margin:0 0 10px}p{margin:0}.m{color:var(--m);font-size:14px}
+main{max-width:480px;margin:0 auto;padding:16px 16px calc(100px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
+section[hidden]{display:none}section{display:grid;gap:14px}
+.card{background:#fff;border:1px solid var(--bd);border-radius:18px;padding:16px}
+button,select,input{font:inherit;color:inherit}
+.btn{min-height:50px;width:100%;border:0;border-radius:14px;background:var(--g);color:#fff;font-weight:800;font-size:17px;cursor:pointer}
+.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:2px solid var(--bd);border-radius:22px;background:#fff;cursor:pointer;font-weight:600}
+.chip:has(input:checked){background:var(--y);border-color:var(--y);font-weight:800}
+.chip input{position:absolute;opacity:0;pointer-events:none}.chip:has(input:focus-visible){outline:3px solid var(--g)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+label.l{display:block;font-weight:700;font-size:14px;margin-bottom:4px}
+.i{width:100%;min-height:48px;border:2px solid var(--bd);border-radius:12px;padding:0 12px;background:#fff}
+#who{max-width:46%;min-height:44px;border:2px solid var(--bd);border-radius:12px;background:#fff;padding:0 8px}
+.bar{height:10px;border-radius:5px;background:#E3EEE6;margin:4px 0 10px;overflow:hidden}.bar i{display:block;height:100%;background:var(--g)}
+.note{background:#FFF1C4;border-radius:12px;padding:10px 12px;font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;background:#fff;border-top:1px solid var(--bd);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{min-width:72px;min-height:48px;border:0;background:none;color:var(--m);font-weight:600;font-size:13px;cursor:pointer}
+nav button[aria-current=page]{color:var(--g);font-weight:800}
+fieldset{border:0;padding:0;margin:0 0 12px}legend{font-weight:800;margin-bottom:6px}
+.big{font-size:44px;font-weight:800;line-height:1}ul{margin:6px 0 0;padding-left:20px}
+.ok{color:var(--g)}
+</style></head><body>
+<header><h1>Nutri-Enfants</h1><select id="who" aria-label="Enfant"></select></header>
+<main>
+<section id="home">
+<div class="card"><h2 id="hh">Aujourd’hui</h2><p class="m" id="hs"></p><div id="hb" style="margin-top:12px"></div></div>
+<button class="btn" data-go="meal">Ajouter un repas</button>
+</section>
+<section id="meal" hidden>
+<h2>Ajouter un repas</h2>
+<form id="mf" class="card">
+<fieldset><legend>Repas</legend><div class="row" id="mt"></div></fieldset>
+<div id="mg"></div>
+<p class="note" id="off" hidden>Hors connexion : tout est enregistré sur ce téléphone.</p>
+<button class="btn" type="submit" style="margin-top:12px">Enregistrer le repas</button>
+</form>
+</section>
+<section id="prof" hidden>
+<h2>Profil et mesures</h2>
+<form id="pf" class="card" style="display:grid;gap:12px">
+<div><label class="l" for="n">Prénom</label><input class="i" id="n" required maxlength="40" autocomplete="off"></div>
+<div><label class="l" for="b">Date de naissance</label><input class="i" id="b" type="date" required></div>
+<div><label class="l" for="s">Sexe</label><select class="i" id="s"><option value="F">Fille</option><option value="M">Garçon</option></select></div>
+<div class="row" style="align-items:flex-end;flex-wrap:nowrap"><div style="flex:1"><label class="l" for="w">Poids (kg)</label><input class="i" id="w" inputmode="decimal" required></div><div style="flex:1"><label class="l" for="h">Taille (cm)</label><input class="i" id="h" inputmode="decimal" required></div></div>
+<p class="m">Pour ajouter une nouvelle mesure, saisissez le même prénom et la même date de naissance.</p>
+<button class="btn" type="submit">Enregistrer et calculer l’IMC</button>
+<p class="note" id="pe" hidden></p>
+</form>
+</section>
+<section id="adv" hidden>
+<h2>IMC et conseils</h2><div id="ab"></div>
+</section>
+</main>
+<nav aria-label="Navigation"><button data-go="home">Accueil</button><button data-go="meal">Repas</button><button data-go="prof">Profil</button><button data-go="adv">Conseils</button></nav>
+<script src="who-bmi.js"></script>
+<script>
+const $=s=>document.querySelector(s),KEY='nutri-enfants-v1';
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=S||{children:[],cur:null,meals:{}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const today=()=>new Date().toISOString().slice(0,10),cur=()=>S.children.find(c=>c.id===S.cur);
+const G={'Féculents':['Manioc','Banane plantain','Riz','Igname','Maïs','Patate douce'],'Protéines':['Haricots','Poisson','Œufs','Arachides','Viande','Lait'],'Fruits et légumes':['Mangue','Papaye','Orange','Banane','Feuilles vertes','Carotte','Tomate']};
+const T=['Matin','Midi','Soir','Collation'];
+const el=(t,o={},kids=[])=>{const e=document.createElement(t);Object.assign(e,o);kids.forEach(k=>e.append(k));return e};
+const num=v=>parseFloat(String(v).replace(',','.')),fmt=n=>n.toFixed(1).replace('.',',');
+function months(b){const d=new Date(b),n=new Date();return (n.getFullYear()-d.getFullYear())*12+n.getMonth()-d.getMonth()-(n.getDate()<d.getDate()?1:0)}
+const age=m=>m<24?m+' mois':Math.floor(m/12)+' ans';
+function info(c){const m=c.meas[c.meas.length-1];if(!m)return null;const v=m.w/Math.pow(m.h/100,2),am=months(c.birth);let lab=null;
+ const tb=window.WHO_BMI&&window.WHO_BMI[c.sex==='F'?'girls':'boys'];
+ if(tb&&am>=61&&am<=228){const t=tb[Math.min(228,am)];if(t)lab=v<t[0]?'sev':v<t[1]?'thin':v<=t[4]?'ok':v<=t[5]?'over':'obese'}
+ return{v,am,lab,m}}
+const LAB={sev:'Maigreur sévère',thin:'Maigreur',ok:'Dans la zone attendue pour son âge',over:'Surpoids',obese:'Obésité'};
+function go(v){['home','meal','prof','adv'].forEach(k=>{$('#'+k).hidden=k!==v});document.querySelectorAll('nav button').forEach(b=>b.toggleAttribute('aria-current',b.dataset.go===v)||b.removeAttribute('aria-current'));
+ document.querySelectorAll('nav button').forEach(b=>{if(b.dataset.go===v)b.setAttribute('aria-current','page')});
+ ({home:rHome,meal:rMeal,adv:rAdv,prof:()=>{}})[v]();scrollTo(0,0)}
+function rWho(){const s=$('#who');s.replaceChildren(...S.children.map(c=>el('option',{value:c.id,textContent:c.name,selected:c.id===S.cur})));s.hidden=!S.children.length}
+function rHome(){const c=cur(),b=$('#hb');b.replaceChildren();
+ if(!c){$('#hs').textContent='Ajoutez un enfant pour commencer.';b.append(el('button',{className:'btn',textContent:'Ajouter un enfant',onclick:()=>go('prof')}));return}
+ const ms=(S.meals[c.id]||{})[today()]||[];$('#hh').textContent=c.name+' · '+age(months(c.birth));
+ $('#hs').textContent=ms.length+' repas noté'+(ms.length>1?'s':'')+' aujourd’hui';
+ Object.keys(G).forEach(g=>{const n=ms.filter(x=>x.foods.some(f=>G[g].includes(f))).length;b.append(el('div',{},[el('span',{className:'m',textContent:g+' · '+n+' repas'}),el('div',{className:'bar'},[el('i',{style:'width:'+Math.min(100,n/3*100)+'%'})])]))});
+ const w=ms.some(x=>x.water);b.append(el('p',{className:'m',textContent:w?'Eau notée aujourd’hui.':'Pensez à noter l’eau bue.'}))}
+function rMeal(){const t=$('#mt'),g=$('#mg');if(t.children.length)return;
+ T.forEach((x,i)=>t.append(el('label',{className:'chip'},[el('input',{type:'radio',name:'t',value:x,checked:i===1}),x])));
+ Object.keys(G).forEach(k=>{const f=el('fieldset',{},[el('legend',{textContent:k})]),r=el('div',{className:'row'});G[k].forEach(x=>r.append(el('label',{className:'chip'},[el('input',{type:'checkbox',name:'f',value:x}),x])));f.append(r);g.append(f)});
+ g.append(el('label',{className:'chip'},[el('input',{type:'checkbox',name:'w'}),'Eau bue']))}
+function advice(i){const out=[],am=i.am;
+ if(am<6)return['Avant 6 mois : lait maternel uniquement, sans eau ni autre aliment. Consultez un agent de santé pour tout doute.'];
+ if(am<24)out.push('Continuez l’allaitement et ajoutez des bouillies enrichies (arachides, œufs, poisson), des purées de légumes et de fruits.');
+ if(i.lab==='sev'||i.lab==='thin')out.push('Augmentez la densité des repas : arachides, œufs, haricots, poisson, huile, plusieurs collations par jour. Faites vérifier l’enfant dans un centre de santé.');
+ else if(i.lab==='over'||i.lab==='obese')out.push('Limitez boissons sucrées, fritures et sucreries. Privilégiez légumes, fruits, haricots et poisson, et encouragez le jeu actif. Un avis médical est conseillé.');
+ else if(i.lab==='ok')out.push('Gardez cet équilibre : un féculent, une protéine et un légume ou fruit à chaque repas.');
+ else out.push('Variez chaque repas : un féculent, une protéine et un légume ou un fruit.');
+ Object.keys(G).forEach(k=>out.push(k+' : '+G[k].slice(0,4).join(', ').toLowerCase()+'.'));out.push('Eau propre tout au long de la journée.');return out}
+function rAdv(){const c=cur(),b=$('#ab');b.replaceChildren();const i=c&&info(c);
+ if(!i){b.append(el('p',{className:'m',textContent:'Saisissez d’abord le poids et la taille dans Profil.'}));return}
+ const k=el('div',{className:'card'},[el('p',{className:'m',textContent:c.name+' · '+age(i.am)}),el('div',{className:'big',textContent:fmt(i.v)}),el('p',{className:'m',textContent:'IMC en kg/m² : '+i.m.w+' kg ÷ ('+(i.m.h/100).toFixed(2).replace('.',',')+' m)²'}),
+  el('p',{style:'font-weight:800;margin-top:8px',textContent:i.lab?LAB[i.lab]:'Interprétation indisponible'})]);
+ if(!i.lab)k.append(el('p',{className:'m',textContent:i.am<61?'Pour les moins de 5 ans, l’IMC seul ne suffit pas : faites mesurer l’enfant dans un centre de santé.':'Tables OMS non installées (voir README).'}));
+ const a=el('div',{className:'card'},[el('h2',{textContent:'À mettre dans l’assiette'})]),u=el('ul');advice(i).forEach(x=>u.append(el('li',{textContent:x})));a.append(u);
+ const h=el('div',{className:'card'},[el('h2',{textContent:'Historique'})]);c.meas.slice(-5).reverse().forEach(m=>h.append(el('p',{className:'m',textContent:m.d+' : '+m.w+' kg, '+m.h+' cm, IMC '+fmt(m.w/Math.pow(m.h/100,2))})));
+ b.append(k,a,h,el('p',{className:'note',textContent:'Ces conseils ne remplacent pas l’avis d’un médecin ou d’un agent de santé.'}))}
+$('#who').onchange=e=>{S.cur=e.target.value;save();go('home')};
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+$('#mf').onsubmit=e=>{e.preventDefault();const c=cur();if(!c)return go('prof');const f=new FormData(e.target);
+ const m={type:f.get('t'),foods:f.getAll('f'),water:f.has('w')};((S.meals[c.id]=S.meals[c.id]||{})[today()]=S.meals[c.id][today()]||[]).push(m);save();e.target.reset();go('home')};
+$('#pf').onsubmit=e=>{e.preventDefault();const n=$('#n').value.trim(),b=$('#b').value,w=num($('#w').value),h=num($('#h').value),err=$('#pe');
+ if(!(w>1&&w<150&&h>30&&h<220)||new Date(b)>new Date()){err.hidden=false;err.textContent='Vérifiez le poids (kg), la taille (cm) et la date de naissance.';return}
+ err.hidden=true;let c=S.children.find(x=>x.name.toLowerCase()===n.toLowerCase()&&x.birth===b);
+ if(!c){c={id:'c'+Date.now(),name:n,birth:b,sex:$('#s').value,meas:[]};S.children.push(c)}
+ c.meas.push({d:today(),w,h});S.cur=c.id;save();rWho();e.target.reset();go('adv')};
+addEventListener('online',()=>$('#off').hidden=true);addEventListener('offline',()=>$('#off').hidden=false);$('#off').hidden=navigator.onLine;
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if(!cur()&&S.children.length)S.cur=S.children[0].id;rWho();go('home');
+</script></body></html>
